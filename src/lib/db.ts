@@ -35,28 +35,41 @@ export async function initDb() {
     `);
 
     await db.execute(`
-      CREATE TABLE IF NOT EXISTS telemetry (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        event TEXT NOT NULL,
+      CREATE TABLE IF NOT EXISTS users (
+        distinct_id TEXT PRIMARY KEY,
+        first_seen_at TEXT NOT NULL,
+        last_seen_at TEXT NOT NULL,
+        launches_count INTEGER DEFAULT 1,
+        game_launches_count INTEGER DEFAULT 0,
+        total_playtime_minutes INTEGER DEFAULT 0,
+        os TEXT,
+        arch TEXT,
+        locale TEXT,
+        launcher_version TEXT
+      );
+    `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS game_sessions (
+        id TEXT PRIMARY KEY,
         distinct_id TEXT NOT NULL,
-        properties TEXT NOT NULL,
+        instance_name TEXT,
+        minecraft_version TEXT,
+        loader TEXT,
+        duration_minutes INTEGER NOT NULL,
+        exit_code INTEGER,
+        avg_fps REAL,
+        mod_count INTEGER,
         created_at TEXT NOT NULL
       );
     `);
 
     await db.execute(`
-      CREATE TABLE IF NOT EXISTS crashes (
-        id TEXT PRIMARY KEY,
-        launcher_version TEXT,
-        minecraft_version TEXT,
-        loader TEXT,
-        os TEXT,
-        suspected_culprit TEXT,
-        error_title TEXT,
-        stack_trace TEXT,
-        mod_count INTEGER,
-        status TEXT DEFAULT 'unresolved',
-        occurrences INTEGER DEFAULT 1,
+      CREATE TABLE IF NOT EXISTS telemetry (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event TEXT NOT NULL,
+        distinct_id TEXT NOT NULL,
+        properties TEXT NOT NULL,
         created_at TEXT NOT NULL
       );
     `);

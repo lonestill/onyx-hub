@@ -50,6 +50,7 @@ export default function PublicReviewsPage() {
           upvotes: row.upvotes || 0,
           tags: row.tags ? (typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags) : [],
           logsSnippet: row.logs_snippet,
+          adminNotes: row.admin_notes,
           createdAt: row.created_at,
         }));
         setFeedbacks(mapped);
@@ -308,24 +309,61 @@ export default function PublicReviewsPage() {
                       </div>
                     </div>
 
-                    <div>
-                      {item.status === 'resolved' && (
-                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded">
-                          {dict.statusResolved}
-                        </span>
-                      )}
-                      {item.status === 'in_progress' && (
-                        <span className="text-[10px] font-mono text-blue-400 bg-blue-950/40 border border-blue-800/40 px-2 py-0.5 rounded">
-                          {dict.statusInProgress}
-                        </span>
-                      )}
-                      {item.status === 'investigating' && (
-                        <span className="text-[10px] font-mono text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded">
-                          {dict.statusInvestigating}
-                        </span>
-                      )}
-                    </div>
+                    {item.type !== 'review' && (
+                      <div>
+                        {item.type === 'feature' ? (
+                          item.status === 'resolved' ? (
+                            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded">
+                              Добавлено
+                            </span>
+                          ) : item.status === 'in_progress' ? (
+                            <span className="text-[10px] font-mono text-purple-400 bg-purple-950/40 border border-purple-800/40 px-2 py-0.5 rounded">
+                              В разработке
+                            </span>
+                          ) : item.status === 'archived' ? (
+                            <span className="text-[10px] font-mono text-zinc-500 bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">
+                              Отклонено
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono text-blue-400 bg-blue-950/40 border border-blue-800/40 px-2 py-0.5 rounded">
+                              На рассмотрении
+                            </span>
+                          )
+                        ) : (
+                          item.status === 'resolved' ? (
+                            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded">
+                              Пофикшено
+                            </span>
+                          ) : item.status === 'in_progress' ? (
+                            <span className="text-[10px] font-mono text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded">
+                              В работе
+                            </span>
+                          ) : item.status === 'archived' ? (
+                            <span className="text-[10px] font-mono text-zinc-500 bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">
+                              Отклонено
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono text-red-400 bg-red-950/40 border border-red-800/40 px-2 py-0.5 rounded">
+                              Новый
+                            </span>
+                          )
+                        )}
+                      </div>
+                    )}
                   </div>
+
+                  {item.adminNotes && (
+                    <div className="mt-3 pl-12">
+                      <div className="rounded bg-purple-950/20 border border-purple-800/40 p-3">
+                        <span className="text-[10px] font-semibold font-mono text-purple-400 uppercase tracking-wider block mb-1">
+                          Ответ разработчика (Onyx):
+                        </span>
+                        <p className="text-xs text-zinc-200 whitespace-pre-line leading-relaxed">
+                          {item.adminNotes}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.05)] pl-12 flex flex-wrap items-center justify-between text-[11px] text-zinc-500 font-mono">
                     <div className="flex items-center gap-3">

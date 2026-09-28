@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FeedbackItem, CrashReportItem, FeedbackType, FeedbackStatus, DailyMetric, OsBreakdown, LoaderBreakdown } from '../../types';
+import { FeedbackItem, FeedbackType, FeedbackStatus, UserItem, GameSessionItem } from '../../types';
 import { MetricsOverview } from '../../components/MetricsOverview';
 import { FeedbackCard } from '../../components/FeedbackCard';
-import { CrashCard } from '../../components/CrashCard';
 import { FeedbackModal } from '../../components/FeedbackModal';
 import { Search, Plus, LogOut, Loader2, Inbox } from 'lucide-react';
 
@@ -14,10 +13,22 @@ export default function AdminSecretDashboard() {
   const [authError, setAuthError] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  const [activeTab, setActiveTab] = useState<'feedback' | 'metrics' | 'crashes'>('feedback');
+  const [activeTab, setActiveTab] = useState<'feedback' | 'metrics'>('feedback');
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
-  const [crashes, setCrashes] = useState<CrashReportItem[]>([]);
-  const [telemetry, setTelemetry] = useState<any[]>([]);
+  const [telemetryData, setTelemetryData] = useState<{
+    summary: {
+      total_users: number;
+      total_launches: number;
+      total_game_launches: number;
+      total_playtime_minutes: number;
+    };
+    users: UserItem[];
+    sessions: GameSessionItem[];
+  }>({
+    summary: { total_users: 0, total_launches: 0, total_game_launches: 0, total_playtime_minutes: 0 },
+    users: [],
+    sessions: [],
+  });
   const [loading, setLoading] = useState(false);
 
   const [typeFilter, setTypeFilter] = useState<'all' | FeedbackType>('all');
@@ -73,10 +84,9 @@ export default function AdminSecretDashboard() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [fbRes, crRes, telRes] = await Promise.all([
+      const [fbRes, telRes] = await Promise.all([
         fetch('/api/v1/feedback', { cache: 'no-store' }).then(r => r.json()).catch(() => ({ data: [] })),
-        fetch('/api/v1/crashes', { cache: 'no-store' }).then(r => r.json()).catch(() => ({ data: [] })),
-        fetch('/api/v1/telemetry', { cache: 'no-store' }).then(r => r.json()).catch(() => ({ data: [] })),
+        fetch('/api/v1/telemetry', { cache: 'no-store' }).then(r => r.json()).catch(() => ({})),
       ]);
 
       if (fbRes.success && Array.isArray(fbRes.data)) {
@@ -100,25 +110,12 @@ export default function AdminSecretDashboard() {
         })));
       }
 
-      if (crRes.success && Array.isArray(crRes.data)) {
-        setCrashes(crRes.data.map((row: any) => ({
-          id: row.id,
-          timestamp: row.created_at,
-          launcherVersion: row.launcher_version,
-          minecraftVersion: row.minecraft_version,
-          loader: row.loader,
-          os: row.os,
-          suspectedCulprit: row.suspected_culprit,
-          errorTitle: row.error_title,
-          stackTrace: row.stack_trace,
-          modCount: Number(row.mod_count) || 0,
-          status: row.status,
-          occurrences: Number(row.occurrences) || 1,
-        })));
-      }
-
-      if (telRes.success && Array.isArray(telRes.data)) {
-        setTelemetry(telRes.data);
+      if (telRes.success) {
+        setTelemetryData({
+          summary: telRes.summary || { total_users: 0, total_launches: 0, total_game_launches: 0, total_playtime_minutes: 0 },
+          users: Array.isArray(telRes.users) ? telRes.users : [],
+          sessions: Array.isArray(telRes.sessions) ? telRes.sessions : [],
+        });
       }
     } catch (e) {
       console.error('Error fetching admin data:', e);
@@ -130,28 +127,6 @@ export default function AdminSecretDashboard() {
   const handleStatusChange = (id: string, newStatus: FeedbackStatus) => {
     setFeedbacks(feedbacks.map((f) => (f.id === id ? { ...f, status: newStatus } : f)));
   };
-
-  const appLaunches = telemetry.filter(t => t.event === 'app_launch').length;
-  const gameLaunches = telemetry.filter(t => t.event === 'game_launch').length;
-  const uniqueUsers = new Set(telemetry.map(t => t.distinct_id)).size;
-
-  const derivedMetrics: DailyMetric[] = [
-    {
-      date: 'Сегодня',
-      appLaunches: appLaunches || 0,
-      gameLaunches: gameLaunches || 0,
-      uniqueUsers: uniqueUsers || 0,
-      crashes: crashes.length,
-    }
-  ];
-
-  const derivedOsBreakdown: OsBreakdown[] = [
-    { os: 'Windows 10/11 x64', share: 100, count: appLaunches || 0 },
-  ];
-
-  const derivedLoaderBreakdown: LoaderBreakdown[] = [
-    { name: 'Fabric', count: gameLaunches || 0, color: '#38bdf8' },
-  ];
 
   const filtered = feedbacks.filter((item) => {
     const matchesType = typeFilter === 'all' || item.type === typeFilter;
@@ -254,7 +229,7 @@ export default function AdminSecretDashboard() {
                   : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              Отзывы игроков ({feedbacks.length})
+              Отзывы, баги и идеи ({feedbacks.length})
             </button>
             <button
               onClick={() => setActiveTab('metrics')}
@@ -264,17 +239,7 @@ export default function AdminSecretDashboard() {
                   : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              Телеметрия ({telemetry.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('crashes')}
-              className={`px-3 py-1.5 rounded transition-colors font-medium ${
-                activeTab === 'crashes'
-                  ? 'bg-[#181c24] text-zinc-100 border border-zinc-700/60'
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              Краш-логи ({crashes.length})
+              Телеметрия ({telemetryData.summary.total_users || 0} игроков)
             </button>
           </div>
 
@@ -370,30 +335,10 @@ export default function AdminSecretDashboard() {
         {/* Tab 2: Metrics */}
         {activeTab === 'metrics' && (
           <MetricsOverview
-            metrics={derivedMetrics}
-            osBreakdown={derivedOsBreakdown}
-            loaderBreakdown={derivedLoaderBreakdown}
+            summary={telemetryData.summary}
+            users={telemetryData.users}
+            sessions={telemetryData.sessions}
           />
-        )}
-
-        {/* Tab 3: Crashes */}
-        {activeTab === 'crashes' && (
-          <div className="space-y-2.5">
-            <div className="panel rounded-lg p-3 flex items-center justify-between text-xs text-zinc-400">
-              <span>Краш-детекция: <strong className="text-emerald-400 font-mono">Активна</strong></span>
-              <span className="text-zinc-500 font-mono text-[11px]">Всего крашей в базе: {crashes.length}</span>
-            </div>
-
-            {crashes.length === 0 ? (
-              <div className="panel rounded-xl p-12 text-center text-xs text-zinc-500">
-                Краш-логов от игроков пока не зафиксировано
-              </div>
-            ) : (
-              crashes.map((crash) => (
-                <CrashCard key={crash.id} item={crash} />
-              ))
-            )}
-          </div>
         )}
       </main>
 

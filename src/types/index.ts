@@ -35,6 +35,32 @@ export interface CrashReportItem {
   occurrences: number;
 }
 
+export interface UserItem {
+  distinct_id: string;
+  first_seen_at: string;
+  last_seen_at: string;
+  launches_count: number;
+  game_launches_count: number;
+  total_playtime_minutes: number;
+  os?: string;
+  arch?: string;
+  locale?: string;
+  launcher_version?: string;
+}
+
+export interface GameSessionItem {
+  id: string;
+  distinct_id: string;
+  instance_name?: string;
+  minecraft_version?: string;
+  loader?: string;
+  duration_minutes: number;
+  exit_code?: number;
+  avg_fps?: number;
+  mod_count?: number;
+  created_at: string;
+}
+
 export interface DailyMetric {
   date: string;
   appLaunches: number;

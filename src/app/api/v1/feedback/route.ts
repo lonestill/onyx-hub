@@ -9,7 +9,7 @@ export async function OPTIONS() {
     status: 204,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
@@ -72,6 +72,40 @@ export async function GET() {
     await initDb();
     const res = await db.execute(`SELECT * FROM feedback ORDER BY created_at DESC`);
     return NextResponse.json({ success: true, count: res.rows.length, data: res.rows });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, status, admin_notes } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'missing id' }, { status: 400 });
+    }
+
+    await initDb();
+
+    if (status !== undefined && admin_notes !== undefined) {
+      await db.execute({
+        sql: `UPDATE feedback SET status = ?, admin_notes = ? WHERE id = ?`,
+        args: [status, admin_notes, String(id)],
+      });
+    } else if (status !== undefined) {
+      await db.execute({
+        sql: `UPDATE feedback SET status = ? WHERE id = ?`,
+        args: [status, String(id)],
+      });
+    } else if (admin_notes !== undefined) {
+      await db.execute({
+        sql: `UPDATE feedback SET admin_notes = ? WHERE id = ?`,
+        args: [admin_notes, String(id)],
+      });
+    }
+
+    return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
