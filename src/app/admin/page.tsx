@@ -6,12 +6,13 @@ import { MetricsOverview } from '../../components/MetricsOverview';
 import { FeedbackCard } from '../../components/FeedbackCard';
 import { CrashCard } from '../../components/CrashCard';
 import { FeedbackModal } from '../../components/FeedbackModal';
-import { Search, Plus, ExternalLink, Lock, LogOut, Loader2, Inbox } from 'lucide-react';
+import { Search, Plus, Lock, LogOut, Loader2, Inbox } from 'lucide-react';
 
 export default function AdminSecretDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [tokenInput, setTokenInput] = useState('');
   const [authError, setAuthError] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const [activeTab, setActiveTab] = useState<'feedback' | 'metrics' | 'crashes'>('feedback');
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
@@ -24,27 +25,49 @@ export default function AdminSecretDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Check saved session
+  // Check server session cookie on mount
   useEffect(() => {
-    const saved = localStorage.getItem('onyx_admin_token');
-    if (saved) {
-      verifyAndLogin(saved);
-    }
+    checkServerSession();
   }, []);
 
-  const verifyAndLogin = (token: string) => {
-    // Basic secret match or env check
-    if (token === 'onyx2026' || token.length >= 8) {
-      setIsAuthenticated(true);
-      localStorage.setItem('onyx_admin_token', token);
-      loadAllData();
-    } else {
+  const checkServerSession = async () => {
+    try {
+      const res = await fetch('/api/v1/auth');
+      if (res.ok) {
+        setIsAuthenticated(true);
+        loadAllData();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCheckingAuth(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(false);
+
+    try {
+      const res = await fetch('/api/v1/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: tokenInput.trim() }),
+      });
+
+      if (res.ok) {
+        setIsAuthenticated(true);
+        loadAllData();
+      } else {
+        setAuthError(true);
+      }
+    } catch (e) {
       setAuthError(true);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('onyx_admin_token');
+  const handleLogout = async () => {
+    await fetch('/api/v1/auth', { method: 'DELETE' });
     setIsAuthenticated(false);
   };
 
@@ -109,7 +132,6 @@ export default function AdminSecretDashboard() {
     setFeedbacks(feedbacks.map((f) => (f.id === id ? { ...f, status: newStatus } : f)));
   };
 
-  // Derive live metrics from telemetry table
   const appLaunches = telemetry.filter(t => t.event === 'app_launch').length;
   const gameLaunches = telemetry.filter(t => t.event === 'game_launch').length;
   const uniqueUsers = new Set(telemetry.map(t => t.distinct_id)).size;
@@ -117,19 +139,19 @@ export default function AdminSecretDashboard() {
   const derivedMetrics: DailyMetric[] = [
     {
       date: 'Сегодня',
-      appLaunches: appLaunches || 1,
+      appLaunches: appLaunches || 0,
       gameLaunches: gameLaunches || 0,
-      uniqueUsers: uniqueUsers || 1,
+      uniqueUsers: uniqueUsers || 0,
       crashes: crashes.length,
     }
   ];
 
   const derivedOsBreakdown: OsBreakdown[] = [
-    { os: 'Windows 10/11 x64', share: 100, count: appLaunches || 1 },
+    { os: 'Windows 10/11 x64', share: 100, count: appLaunches || 0 },
   ];
 
   const derivedLoaderBreakdown: LoaderBreakdown[] = [
-    { name: 'Fabric', count: gameLaunches || 1, color: '#38bdf8' },
+    { name: 'Fabric', count: gameLaunches || 0, color: '#38bdf8' },
   ];
 
   const filtered = feedbacks.filter((item) => {
@@ -148,6 +170,14 @@ export default function AdminSecretDashboard() {
     ? (reviewsWithRating.reduce((acc, f) => acc + (f.rating || 0), 0) / reviewsWithRating.length).toFixed(1)
     : '0.0';
 
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#090b0e]">
+        <Loader2 className="w-5 h-5 animate-spin text-zinc-500" />
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#090b0e]">
@@ -159,15 +189,9 @@ export default function AdminSecretDashboard() {
             </span>
           </div>
           <p className="text-xs text-zinc-400">
-            Закрытый доступ. Введите мастер-пароль разработчика (по умолчанию: <code className="font-mono text-zinc-300">onyx2026</code>)
+            Вход защищён переменной окружения <code className="font-mono text-zinc-300">ADMIN_SECRET</code> на сервере.
           </p>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              verifyAndLogin(tokenInput.trim());
-            }}
-            className="space-y-3"
-          >
+          <form onSubmit={handleLogin} className="space-y-3">
             <input
               type="password"
               autoFocus
@@ -186,7 +210,7 @@ export default function AdminSecretDashboard() {
               type="submit"
               className="w-full py-1.5 rounded bg-zinc-200 hover:bg-white text-zinc-950 font-semibold text-xs transition-colors cursor-pointer"
             >
-              Войти в админку
+              Войти в консоль
             </button>
           </form>
         </div>
