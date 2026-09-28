@@ -32,7 +32,7 @@ export default function PublicReviewsPage() {
   const fetchFeedbacks = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/v1/feedback');
+      const res = await fetch('/api/v1/feedback', { cache: 'no-store' });
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         const mapped: FeedbackItem[] = json.data.map((row: any) => ({
@@ -43,12 +43,12 @@ export default function PublicReviewsPage() {
           comment: row.comment,
           contact: row.contact,
           status: row.status || 'new',
-          launcherVersion: row.launcher_version || '1.6.17',
-          os: row.os || 'Windows',
-          arch: row.arch || 'x64',
+          launcherVersion: row.launcher_version || 'Web',
+          os: row.os || 'Web',
+          arch: row.arch || '',
           anonymousId: row.anonymous_id || 'anon',
           upvotes: row.upvotes || 0,
-          tags: row.tags ? JSON.parse(row.tags) : [],
+          tags: row.tags ? (typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags) : [],
           logsSnippet: row.logs_snippet,
           createdAt: row.created_at,
         }));
@@ -329,8 +329,14 @@ export default function PublicReviewsPage() {
 
                   <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.05)] pl-12 flex flex-wrap items-center justify-between text-[11px] text-zinc-500 font-mono">
                     <div className="flex items-center gap-3">
-                      <span className="text-zinc-400">v{item.launcherVersion}</span>
-                      <span>{item.os}</span>
+                      {item.launcherVersion && (
+                        <span className="text-zinc-400">
+                          {item.launcherVersion.toLowerCase() === 'web' || !item.launcherVersion.match(/^\d/)
+                            ? item.launcherVersion
+                            : `v${item.launcherVersion}`}
+                        </span>
+                      )}
+                      {item.os && <span>{item.os}</span>}
                     </div>
 
                     <div className="flex items-center gap-2">

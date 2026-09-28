@@ -74,9 +74,9 @@ export default function AdminSecretDashboard() {
     setLoading(true);
     try {
       const [fbRes, crRes, telRes] = await Promise.all([
-        fetch('/api/v1/feedback').then(r => r.json()).catch(() => ({ data: [] })),
-        fetch('/api/v1/crashes').then(r => r.json()).catch(() => ({ data: [] })),
-        fetch('/api/v1/telemetry').then(r => r.json()).catch(() => ({ data: [] })),
+        fetch('/api/v1/feedback', { cache: 'no-store' }).then(r => r.json()).catch(() => ({ data: [] })),
+        fetch('/api/v1/crashes', { cache: 'no-store' }).then(r => r.json()).catch(() => ({ data: [] })),
+        fetch('/api/v1/telemetry', { cache: 'no-store' }).then(r => r.json()).catch(() => ({ data: [] })),
       ]);
 
       if (fbRes.success && Array.isArray(fbRes.data)) {

@@ -12,6 +12,17 @@ interface FeedbackModalProps {
   lang?: Lang;
 }
 
+const getClientOS = () => {
+  if (typeof window === 'undefined') return 'Web';
+  const ua = window.navigator.userAgent;
+  if (ua.includes('Win')) return 'Windows';
+  if (ua.includes('Mac')) return 'macOS';
+  if (ua.includes('Linux')) return 'Linux';
+  if (ua.includes('Android')) return 'Android';
+  if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS';
+  return 'Web';
+};
+
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, onSubmit, lang = 'ru' }) => {
   const [type, setType] = useState<FeedbackType>('review');
   const [rating, setRating] = useState(5);
@@ -35,10 +46,10 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, o
       comment,
       contact: contact.trim() || undefined,
       status: 'new',
-      launcherVersion: '1.6.17',
-      os: 'macOS',
-      arch: 'arm64',
-      anonymousId: 'user-sim',
+      launcherVersion: 'Web',
+      os: getClientOS(),
+      arch: typeof window !== 'undefined' && window.navigator.userAgent.includes('ARM') ? 'arm64' : 'x64',
+      anonymousId: 'web-user',
       createdAt: new Date().toISOString(),
       tags: [type === 'review' ? 'Review' : type === 'bug' ? 'Bug' : 'Feature'],
     });
