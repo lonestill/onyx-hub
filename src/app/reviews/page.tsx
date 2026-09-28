@@ -1,20 +1,76 @@
 'use client';
 
-import React, { useState } from 'react';
-import { mockFeedbacks } from '../../data/mockData';
+import React, { useState, useEffect } from 'react';
 import { FeedbackItem, FeedbackType } from '../../types';
 import { FeedbackModal } from '../../components/FeedbackModal';
-import { Star, Bug, Lightbulb, MessageSquarePlus, ThumbsUp, Search, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Star, MessageSquarePlus, ThumbsUp, Search, ExternalLink, ShieldCheck, Inbox, Loader2 } from 'lucide-react';
 
 export default function PublicReviewsPage() {
-  const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>(mockFeedbacks);
+  const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<'all' | FeedbackType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [upvotedIds, setUpvotedIds] = useState<Record<string, boolean>>({});
 
-  const handleNewFeedback = (item: FeedbackItem) => {
-    setFeedbacks([item, ...feedbacks]);
+  const fetchFeedbacks = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/v1/feedback');
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        const mapped: FeedbackItem[] = json.data.map((row: any) => ({
+          id: row.id,
+          type: row.type || 'review',
+          rating: row.rating ? Number(row.rating) : undefined,
+          title: row.title,
+          comment: row.comment,
+          contact: row.contact,
+          status: row.status || 'new',
+          launcherVersion: row.launcher_version || '1.6.17',
+          os: row.os || 'Windows',
+          arch: row.arch || 'x64',
+          anonymousId: row.anonymous_id || 'anon',
+          upvotes: row.upvotes || 0,
+          tags: row.tags ? JSON.parse(row.tags) : [],
+          logsSnippet: row.logs_snippet,
+          createdAt: row.created_at,
+        }));
+        setFeedbacks(mapped);
+      }
+    } catch (e) {
+      console.error('Failed to load reviews:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFeedbacks();
+  }, []);
+
+  const handleNewFeedback = async (item: FeedbackItem) => {
+    try {
+      await fetch('/api/v1/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: item.type,
+          rating: item.rating,
+          title: item.title,
+          comment: item.comment,
+          contact: item.contact,
+          launcher_version: item.launcherVersion,
+          os: item.os,
+          arch: item.arch,
+          tags: item.tags,
+          logs_snippet: item.logsSnippet,
+        }),
+      });
+      fetchFeedbacks();
+    } catch (e) {
+      console.error('Error submitting feedback:', e);
+    }
   };
 
   const toggleUpvote = (id: string) => {
@@ -38,9 +94,9 @@ export default function PublicReviewsPage() {
   });
 
   const reviewsWithRating = feedbacks.filter((f) => f.rating);
-  const avgRating = (
-    reviewsWithRating.reduce((acc, f) => acc + (f.rating || 0), 0) / (reviewsWithRating.length || 1)
-  ).toFixed(1);
+  const avgRating = reviewsWithRating.length > 0
+    ? (reviewsWithRating.reduce((acc, f) => acc + (f.rating || 0), 0) / reviewsWithRating.length).toFixed(1)
+    : '0.0';
 
   return (
     <div className="min-h-screen pb-20">
@@ -92,7 +148,7 @@ export default function PublicReviewsPage() {
                 Отзывы, предложения и известные проблемы
               </h1>
               <p className="text-xs text-zinc-400 mt-1 max-w-xl leading-relaxed">
-                Мы открыто собираем обратную связь игроков Onyx Launcher. Голосуйте за полезные идеи, сообщайте о багах или пишите свои впечатления от сборок.
+                Прямая обратная связь от игроков Onyx Launcher. Голосуйте за идеи, сообщайте о багах или пишите свои впечатления.
               </p>
             </div>
 
@@ -104,7 +160,7 @@ export default function PublicReviewsPage() {
                     <Star
                       key={i}
                       className={`w-3 h-3 ${
-                        i < Math.round(Number(avgRating)) ? 'text-amber-400 fill-amber-400' : 'text-zinc-700'
+                        i < Math.round(Number(avgRating)) && Number(avgRating) > 0 ? 'text-amber-400 fill-amber-400' : 'text-zinc-700'
                       }`}
                     />
                   ))}
@@ -150,97 +206,118 @@ export default function PublicReviewsPage() {
         </div>
 
         {/* Feedback List */}
-        <div className="space-y-3">
-          {filtered.map((item) => {
-            const hasUpvoted = !!upvotedIds[item.id];
-            return (
-              <div key={item.id} className="panel rounded-lg p-4 transition-colors hover:border-zinc-700/60">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    {/* Upvote button for community */}
-                    <button
-                      onClick={() => toggleUpvote(item.id)}
-                      className={`flex flex-col items-center justify-center p-2 rounded border transition-colors shrink-0 ${
-                        hasUpvoted
-                          ? 'bg-purple-950/40 border-purple-700/60 text-purple-300'
-                          : 'bg-[#090b0e] border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
-                      }`}
-                    >
-                      <ThumbsUp className={`w-3.5 h-3.5 ${hasUpvoted ? 'fill-purple-300' : ''}`} />
-                      <span className="text-[10px] font-mono mt-1 font-semibold">{item.upvotes || 0}</span>
-                    </button>
+        {loading ? (
+          <div className="panel rounded-xl p-12 flex flex-col items-center justify-center text-zinc-500 space-y-2">
+            <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+            <span className="text-xs">Загрузка данных из базы...</span>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="panel rounded-xl p-12 flex flex-col items-center justify-center text-center space-y-3">
+            <div className="p-3 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-600">
+              <Inbox className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-300">Пока нет отзывов</h3>
+              <p className="text-xs text-zinc-500 mt-0.5">Будьте первым, кто оставит фидбек или идею!</p>
+            </div>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-3.5 py-1.5 rounded bg-[#181c24] hover:bg-[#202632] border border-zinc-700/60 text-zinc-200 text-xs font-medium transition-colors"
+            >
+              Написать первый отзыв
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((item) => {
+              const hasUpvoted = !!upvotedIds[item.id];
+              return (
+                <div key={item.id} className="panel rounded-lg p-4 transition-colors hover:border-zinc-700/60">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <button
+                        onClick={() => toggleUpvote(item.id)}
+                        className={`flex flex-col items-center justify-center p-2 rounded border transition-colors shrink-0 ${
+                          hasUpvoted
+                            ? 'bg-purple-950/40 border-purple-700/60 text-purple-300'
+                            : 'bg-[#090b0e] border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+                        }`}
+                      >
+                        <ThumbsUp className={`w-3.5 h-3.5 ${hasUpvoted ? 'fill-purple-300' : ''}`} />
+                        <span className="text-[10px] font-mono mt-1 font-semibold">{item.upvotes || 0}</span>
+                      </button>
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                            {item.type === 'review' ? 'Отзыв' : item.type === 'bug' ? 'Баг' : 'Идея'}
+                          </span>
+                          {item.rating && (
+                            <div className="flex items-center gap-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-3 h-3 ${
+                                    i < item.rating! ? 'text-amber-400 fill-amber-400' : 'text-zinc-700'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <h3 className="text-sm font-semibold text-zinc-100 mt-0.5">
+                          {item.title}
+                        </h3>
+                        <p className="text-xs text-zinc-300 mt-2 leading-relaxed whitespace-pre-line">
+                          {item.comment}
+                        </p>
+                      </div>
+                    </div>
 
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                          {item.type === 'review' ? 'Отзыв' : item.type === 'bug' ? 'Баг' : 'Идея'}
+                      {item.status === 'resolved' && (
+                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded">
+                          Решено
                         </span>
-                        {item.rating && (
-                          <div className="flex items-center gap-0.5">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-3 h-3 ${
-                                  i < item.rating! ? 'text-amber-400 fill-amber-400' : 'text-zinc-700'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <h3 className="text-sm font-semibold text-zinc-100 mt-0.5">
-                        {item.title}
-                      </h3>
-                      <p className="text-xs text-zinc-300 mt-2 leading-relaxed whitespace-pre-line">
-                        {item.comment}
-                      </p>
+                      )}
+                      {item.status === 'in_progress' && (
+                        <span className="text-[10px] font-mono text-blue-400 bg-blue-950/40 border border-blue-800/40 px-2 py-0.5 rounded">
+                          В разработке
+                        </span>
+                      )}
+                      {item.status === 'investigating' && (
+                        <span className="text-[10px] font-mono text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded">
+                          Анализ
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  <div>
-                    {item.status === 'resolved' && (
-                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded">
-                        Решено
+                  <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.05)] pl-12 flex flex-wrap items-center justify-between text-[11px] text-zinc-500 font-mono">
+                    <div className="flex items-center gap-3">
+                      <span className="text-zinc-400">v{item.launcherVersion}</span>
+                      <span>{item.os}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {item.tags?.map((t) => (
+                        <span key={t} className="text-zinc-400 bg-zinc-900 px-1.5 py-0.2 rounded border border-zinc-800 text-[10px]">
+                          #{t}
+                        </span>
+                      ))}
+                      <span>
+                        {new Date(item.createdAt).toLocaleDateString('ru-RU', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
                       </span>
-                    )}
-                    {item.status === 'in_progress' && (
-                      <span className="text-[10px] font-mono text-blue-400 bg-blue-950/40 border border-blue-800/40 px-2 py-0.5 rounded">
-                        В разработке
-                      </span>
-                    )}
-                    {item.status === 'investigating' && (
-                      <span className="text-[10px] font-mono text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded">
-                        Анализ
-                      </span>
-                    )}
+                    </div>
                   </div>
                 </div>
-
-                {/* Footer details */}
-                <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.05)] pl-12 flex flex-wrap items-center justify-between text-[11px] text-zinc-500 font-mono">
-                  <div className="flex items-center gap-3">
-                    <span className="text-zinc-400">v{item.launcherVersion}</span>
-                    <span>{item.os}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {item.tags?.map((t) => (
-                      <span key={t} className="text-zinc-400 bg-zinc-900 px-1.5 py-0.2 rounded border border-zinc-800 text-[10px]">
-                        #{t}
-                      </span>
-                    ))}
-                    <span>
-                      {new Date(item.createdAt).toLocaleDateString('ru-RU', {
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </main>
 
       <FeedbackModal
