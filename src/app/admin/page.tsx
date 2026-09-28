@@ -6,7 +6,7 @@ import { MetricsOverview } from '../../components/MetricsOverview';
 import { FeedbackCard } from '../../components/FeedbackCard';
 import { CrashCard } from '../../components/CrashCard';
 import { FeedbackModal } from '../../components/FeedbackModal';
-import { Search, Plus, Lock, LogOut, Loader2, Inbox } from 'lucide-react';
+import { Search, Plus, LogOut, Loader2, Inbox } from 'lucide-react';
 
 export default function AdminSecretDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -25,7 +25,6 @@ export default function AdminSecretDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Check server session cookie on mount
   useEffect(() => {
     checkServerSession();
   }, []);
@@ -172,48 +171,31 @@ export default function AdminSecretDashboard() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-[#090b0e]">
-        <Loader2 className="w-5 h-5 animate-spin text-zinc-500" />
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#0c0e12]">
+        <Loader2 className="w-4 h-4 animate-spin text-zinc-600" />
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-[#090b0e]">
-        <div className="panel max-w-sm w-full p-6 rounded-xl space-y-4 shadow-2xl border-zinc-700/60">
-          <div className="flex items-center gap-2">
-            <Lock className="w-4 h-4 text-purple-400" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-200">
-              Onyx Control Plane Auth
-            </span>
-          </div>
-          <p className="text-xs text-zinc-400">
-            Вход защищён переменной окружения <code className="font-mono text-zinc-300">ADMIN_SECRET</code> на сервере.
-          </p>
-          <form onSubmit={handleLogin} className="space-y-3">
-            <input
-              type="password"
-              autoFocus
-              placeholder="Пароль администратора..."
-              value={tokenInput}
-              onChange={(e) => {
-                setTokenInput(e.target.value);
-                setAuthError(false);
-              }}
-              className="w-full px-3 py-1.5 rounded bg-[#13161c] border border-zinc-800 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 font-mono"
-            />
-            {authError && (
-              <p className="text-[11px] text-rose-400 font-mono">Неверный пароль доступа</p>
-            )}
-            <button
-              type="submit"
-              className="w-full py-1.5 rounded bg-zinc-200 hover:bg-white text-zinc-950 font-semibold text-xs transition-colors cursor-pointer"
-            >
-              Войти в консоль
-            </button>
-          </form>
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#0c0e12]">
+        <form onSubmit={handleLogin} className="max-w-xs w-full space-y-2">
+          <input
+            type="password"
+            autoFocus
+            placeholder="Password"
+            value={tokenInput}
+            onChange={(e) => {
+              setTokenInput(e.target.value);
+              setAuthError(false);
+            }}
+            className="w-full px-3 py-2 rounded bg-[#13161c] border border-zinc-800 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-mono text-center tracking-widest"
+          />
+          {authError && (
+            <p className="text-[11px] text-red-400 font-mono text-center">Invalid password</p>
+          )}
+        </form>
       </div>
     );
   }
@@ -250,7 +232,7 @@ export default function AdminSecretDashboard() {
             </button>
             <button
               onClick={handleLogout}
-              className="text-zinc-500 hover:text-zinc-300 p-1"
+              className="text-zinc-500 hover:text-zinc-300 p-1 cursor-pointer"
               title="Выйти"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -357,8 +339,8 @@ export default function AdminSecretDashboard() {
                   Решено: <strong className="text-emerald-400 font-mono">{feedbacks.filter((f) => f.status === 'resolved').length}</strong>
                 </span>
               </div>
-              <button onClick={loadAllData} className="font-mono text-[11px] text-zinc-400 hover:text-zinc-200">
-                [Обновить данные]
+              <button onClick={loadAllData} className="font-mono text-[11px] text-zinc-400 hover:text-zinc-200 cursor-pointer">
+                [Обновить]
               </button>
             </div>
 
