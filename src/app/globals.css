@@ -11,7 +11,9 @@
   --text: #f3f4f6;
   --text-soft: #9ca3af;
   --text-muted: #64748b;
-  --accent: #10b981;
+  --accent: #84cc16;
+  --accent-rgb: 132, 204, 22;
+  --accent-deep: #65a30d;
 }
 
 body {

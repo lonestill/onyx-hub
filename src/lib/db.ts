@@ -73,6 +73,50 @@ export async function initDb() {
         created_at TEXT NOT NULL
       );
     `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS shared_packs (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        version TEXT NOT NULL,
+        loader TEXT NOT NULL,
+        mod_count INTEGER DEFAULT 0,
+        author TEXT,
+        profile_data TEXT NOT NULL,
+        downloads INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL
+      );
+    `);
+
+    // Party rooms for P2P multiplayer (v2.0.0)
+    // Rooms live for max 8 hours; cleanup happens on read
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS party_rooms (
+        code TEXT PRIMARY KEY,
+        host_peer_id TEXT NOT NULL,
+        host_display_name TEXT,
+        instance_manifest TEXT,
+        peers TEXT NOT NULL DEFAULT '[]',
+        status TEXT NOT NULL DEFAULT 'waiting',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL
+      );
+    `);
+
+    // Ephemeral WebRTC signaling envelopes (offer/answer/candidate)
+    // Each envelope has a target peer_id and is consumed once (deleted after read)
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS party_signals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        room_code TEXT NOT NULL,
+        from_peer_id TEXT NOT NULL,
+        to_peer_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+    `);
     isInitialized = true;
   } catch (e) {
     console.error('Database initialization error:', e);
