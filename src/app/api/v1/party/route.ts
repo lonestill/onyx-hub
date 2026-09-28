@@ -96,7 +96,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       code,
-      deepLink: `onyx://party/${code}`,
+      deepLink: `scope://party/${code}`,
+      legacyDeepLink: `onyx://party/${code}`,
       webLink: `${proto}://${host}/party/${code}`,
       expiresAt: exp,
     }, { headers: CORS });
