@@ -1,21 +1,25 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Star, X, Check } from 'lucide-react';
+import { Star, X } from 'lucide-react';
 import { FeedbackType } from '../types';
+import { Lang, t as tr } from '../lib/translations';
 
 interface FeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (feedback: any) => void;
+  lang?: Lang;
 }
 
-export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, onSubmit }) => {
+export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, onSubmit, lang = 'ru' }) => {
   const [type, setType] = useState<FeedbackType>('review');
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
   const [contact, setContact] = useState('');
+
+  const dict = tr[lang];
 
   if (!isOpen) return null;
 
@@ -49,7 +53,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, o
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
       <div className="w-full max-w-md rounded-lg panel p-5 border-zinc-700/60 shadow-2xl">
         <div className="flex items-center justify-between pb-3 border-b border-[rgba(255,255,255,0.06)]">
-          <span className="text-xs font-medium text-zinc-200">Отправить отзыв в Onyx</span>
+          <span className="text-xs font-medium text-zinc-200">{dict.modalHeader}</span>
           <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">
             <X className="w-4 h-4" />
           </button>
@@ -58,23 +62,23 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, o
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
           {/* Segmented control */}
           <div className="flex rounded-md p-0.5 bg-[#090b0e] border border-zinc-800 text-xs">
-            {(['review', 'bug', 'feature'] as const).map((t) => (
+            {(['review', 'bug', 'feature'] as const).map((mode) => (
               <button
-                key={t}
+                key={mode}
                 type="button"
-                onClick={() => setType(t)}
+                onClick={() => setType(mode)}
                 className={`flex-1 py-1 rounded text-center font-medium transition-colors ${
-                  type === t ? 'bg-[#181c24] text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-300'
+                  type === mode ? 'bg-[#181c24] text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
-                {t === 'review' ? 'Отзыв' : t === 'bug' ? 'Баг' : 'Идея'}
+                {mode === 'review' ? dict.modalTypeReview : mode === 'bug' ? dict.modalTypeBug : dict.modalTypeFeature}
               </button>
             ))}
           </div>
 
           {type === 'review' && (
             <div className="flex items-center justify-between py-1 px-2 rounded bg-[#090b0e] border border-zinc-800/80">
-              <span className="text-xs text-zinc-400">Оценка:</span>
+              <span className="text-xs text-zinc-400">{dict.modalRating}</span>
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <button
@@ -95,11 +99,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, o
           )}
 
           <div>
-            <label className="block text-[11px] text-zinc-400 mb-1">Заголовок</label>
+            <label className="block text-[11px] text-zinc-400 mb-1">{dict.modalTitleLabel}</label>
             <input
               type="text"
               required
-              placeholder="Коротко о сути"
+              placeholder={dict.modalTitlePlaceholder}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-3 py-1.5 rounded bg-[#090b0e] border border-zinc-800 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
@@ -107,11 +111,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, o
           </div>
 
           <div>
-            <label className="block text-[11px] text-zinc-400 mb-1">Описание</label>
+            <label className="block text-[11px] text-zinc-400 mb-1">{dict.modalCommentLabel}</label>
             <textarea
               required
               rows={3}
-              placeholder="Детали..."
+              placeholder={dict.modalCommentPlaceholder}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               className="w-full px-3 py-1.5 rounded bg-[#090b0e] border border-zinc-800 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 resize-none"
@@ -119,10 +123,10 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, o
           </div>
 
           <div>
-            <label className="block text-[11px] text-zinc-400 mb-1">Контакт (необязательно)</label>
+            <label className="block text-[11px] text-zinc-400 mb-1">{dict.modalContactLabel}</label>
             <input
               type="text"
-              placeholder="@telegram или discord"
+              placeholder={dict.modalContactPlaceholder}
               value={contact}
               onChange={(e) => setContact(e.target.value)}
               className="w-full px-3 py-1.5 rounded bg-[#090b0e] border border-zinc-800 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
@@ -135,13 +139,13 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, o
               onClick={onClose}
               className="px-3 py-1.5 rounded text-xs text-zinc-400 hover:text-zinc-200"
             >
-              Отмена
+              {dict.modalCancel}
             </button>
             <button
               type="submit"
               className="px-3.5 py-1.5 rounded bg-zinc-200 hover:bg-white text-zinc-950 font-medium text-xs transition-colors cursor-pointer"
             >
-              Отправить
+              {dict.modalSubmit}
             </button>
           </div>
         </form>

@@ -3,15 +3,31 @@
 import React, { useState, useEffect } from 'react';
 import { FeedbackItem, FeedbackType } from '../../types';
 import { FeedbackModal } from '../../components/FeedbackModal';
-import { Star, MessageSquarePlus, ThumbsUp, Search, ExternalLink, ShieldCheck, Inbox, Loader2 } from 'lucide-react';
+import { Lang, t as tr } from '../../lib/translations';
+import { Star, MessageSquarePlus, ThumbsUp, Search, ExternalLink, ShieldCheck, Inbox, Loader2, Globe } from 'lucide-react';
 
 export default function PublicReviewsPage() {
+  const [lang, setLang] = useState<Lang>('ru');
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<'all' | FeedbackType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [upvotedIds, setUpvotedIds] = useState<Record<string, boolean>>({});
+
+  const dict = tr[lang];
+
+  useEffect(() => {
+    const saved = localStorage.getItem('onyx_lang') as Lang;
+    if (saved && (saved === 'ru' || saved === 'en')) {
+      setLang(saved);
+    }
+  }, []);
+
+  const changeLang = (l: Lang) => {
+    setLang(l);
+    localStorage.setItem('onyx_lang', l);
+  };
 
   const fetchFeedbacks = async () => {
     try {
@@ -106,16 +122,32 @@ export default function PublicReviewsPage() {
           <div className="flex items-center gap-3">
             <span className="text-sm font-semibold tracking-wider text-zinc-100 uppercase">Onyx Launcher</span>
             <span className="text-zinc-700">/</span>
-            <span className="text-xs text-zinc-400 font-medium">Community Feedback & Reviews</span>
+            <span className="text-xs text-zinc-400 font-medium">Community</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* Lang switcher */}
+            <div className="flex rounded p-0.5 bg-[#13161c] border border-zinc-800 text-xs font-mono mr-1">
+              <button
+                onClick={() => changeLang('ru')}
+                className={`px-2 py-0.5 rounded transition-colors ${lang === 'ru' ? 'bg-[#1e232d] text-zinc-200' : 'text-zinc-500 hover:text-zinc-300'}`}
+              >
+                RU
+              </button>
+              <button
+                onClick={() => changeLang('en')}
+                className={`px-2 py-0.5 rounded transition-colors ${lang === 'en' ? 'bg-[#1e232d] text-zinc-200' : 'text-zinc-500 hover:text-zinc-300'}`}
+              >
+                EN
+              </button>
+            </div>
+
             <button
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition-all cursor-pointer shadow-sm"
             >
               <MessageSquarePlus className="w-3.5 h-3.5" />
-              <span>Оставить отзыв / идею</span>
+              <span>{dict.leaveFeedbackBtn}</span>
             </button>
             <a
               href="https://github.com/lonestill/onyx-launcher"
@@ -138,17 +170,17 @@ export default function PublicReviewsPage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs uppercase tracking-wider font-semibold text-zinc-500">
-                  Публичный фидбек
+                  {dict.brandSubtitle}
                 </span>
                 <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-mono bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
-                  <ShieldCheck className="w-3 h-3" /> Open Source & Verified
+                  <ShieldCheck className="w-3 h-3" /> {dict.verifiedBadge}
                 </span>
               </div>
               <h1 className="text-xl font-bold text-zinc-100 mt-1">
-                Отзывы, предложения и известные проблемы
+                {dict.heroTitle}
               </h1>
               <p className="text-xs text-zinc-400 mt-1 max-w-xl leading-relaxed">
-                Прямая обратная связь от игроков Onyx Launcher. Голосуйте за идеи, сообщайте о багах или пишите свои впечатления.
+                {dict.heroDesc}
               </p>
             </div>
 
@@ -165,7 +197,9 @@ export default function PublicReviewsPage() {
                     />
                   ))}
                 </div>
-                <span className="text-[10px] text-zinc-500 font-mono">на основе {reviewsWithRating.length} оценок</span>
+                <span className="text-[10px] text-zinc-500 font-mono">
+                  {dict.reviewsCount.replace('{count}', String(reviewsWithRating.length))}
+                </span>
               </div>
             </div>
           </div>
@@ -183,12 +217,12 @@ export default function PublicReviewsPage() {
                 }`}
               >
                 {t === 'all'
-                  ? `Все (${feedbacks.length})`
+                  ? `${dict.all} (${feedbacks.length})`
                   : t === 'review'
-                  ? 'Отзывы'
+                  ? dict.reviews
                   : t === 'feature'
-                  ? 'Идеи'
-                  : 'Баги'}
+                  ? dict.features
+                  : dict.bugs}
               </button>
             ))}
           </div>
@@ -197,7 +231,7 @@ export default function PublicReviewsPage() {
             <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Поиск по темам..."
+              placeholder={dict.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 pr-3 py-1 rounded bg-[#13161c] border border-zinc-800 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 w-52"
@@ -209,7 +243,7 @@ export default function PublicReviewsPage() {
         {loading ? (
           <div className="panel rounded-xl p-12 flex flex-col items-center justify-center text-zinc-500 space-y-2">
             <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
-            <span className="text-xs">Загрузка данных из базы...</span>
+            <span className="text-xs">{dict.loading}</span>
           </div>
         ) : filtered.length === 0 ? (
           <div className="panel rounded-xl p-12 flex flex-col items-center justify-center text-center space-y-3">
@@ -217,14 +251,14 @@ export default function PublicReviewsPage() {
               <Inbox className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-300">Пока нет отзывов</h3>
-              <p className="text-xs text-zinc-500 mt-0.5">Будьте первым, кто оставит фидбек или идею!</p>
+              <h3 className="text-sm font-semibold text-zinc-300">{dict.noReviewsTitle}</h3>
+              <p className="text-xs text-zinc-500 mt-0.5">{dict.noReviewsDesc}</p>
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
               className="px-3.5 py-1.5 rounded bg-[#181c24] hover:bg-[#202632] border border-zinc-700/60 text-zinc-200 text-xs font-medium transition-colors"
             >
-              Написать первый отзыв
+              {dict.writeFirstBtn}
             </button>
           </div>
         ) : (
@@ -250,7 +284,7 @@ export default function PublicReviewsPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                            {item.type === 'review' ? 'Отзыв' : item.type === 'bug' ? 'Баг' : 'Идея'}
+                            {item.type === 'review' ? dict.reviews : item.type === 'bug' ? dict.bugs : dict.features}
                           </span>
                           {item.rating && (
                             <div className="flex items-center gap-0.5">
@@ -277,17 +311,17 @@ export default function PublicReviewsPage() {
                     <div>
                       {item.status === 'resolved' && (
                         <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded">
-                          Решено
+                          {dict.statusResolved}
                         </span>
                       )}
                       {item.status === 'in_progress' && (
                         <span className="text-[10px] font-mono text-blue-400 bg-blue-950/40 border border-blue-800/40 px-2 py-0.5 rounded">
-                          В разработке
+                          {dict.statusInProgress}
                         </span>
                       )}
                       {item.status === 'investigating' && (
                         <span className="text-[10px] font-mono text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded">
-                          Анализ
+                          {dict.statusInvestigating}
                         </span>
                       )}
                     </div>
@@ -300,13 +334,13 @@ export default function PublicReviewsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {item.tags?.map((t) => (
-                        <span key={t} className="text-zinc-400 bg-zinc-900 px-1.5 py-0.2 rounded border border-zinc-800 text-[10px]">
-                          #{t}
+                      {item.tags?.map((tag) => (
+                        <span key={tag} className="text-zinc-400 bg-zinc-900 px-1.5 py-0.2 rounded border border-zinc-800 text-[10px]">
+                          #{tag}
                         </span>
                       ))}
                       <span>
-                        {new Date(item.createdAt).toLocaleDateString('ru-RU', {
+                        {new Date(item.createdAt).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', {
                           day: 'numeric',
                           month: 'short',
                         })}
@@ -324,6 +358,7 @@ export default function PublicReviewsPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleNewFeedback}
+        lang={lang}
       />
     </div>
   );
