@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, initDb } from '@/lib/db';
+import { isAuthorizedAdmin } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -67,9 +68,24 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await initDb();
+    const isAdmin = isAuthorizedAdmin(req);
+
+    if (!isAdmin) {
+      // Unauthenticated public request: only return non-rejected reviews with sanitized public fields
+      const res = await db.execute(`
+        SELECT id, type, rating, title, comment, status, launcher_version, os, arch, upvotes, tags, created_at
+        FROM feedback
+        WHERE type = 'review' AND status != 'rejected'
+        ORDER BY created_at DESC
+        LIMIT 100
+      `);
+      return NextResponse.json({ success: true, count: res.rows.length, data: res.rows });
+    }
+
+    // Authenticated admin: return all rows with sensitive fields (contact, logs_snippet, admin_notes, bug reports)
     const res = await db.execute(`SELECT * FROM feedback ORDER BY created_at DESC`);
     return NextResponse.json({ success: true, count: res.rows.length, data: res.rows });
   } catch (error: any) {
@@ -78,6 +94,10 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!isAuthorizedAdmin(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { id, status, admin_notes } = body;

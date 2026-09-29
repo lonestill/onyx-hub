@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isAuthorizedAdmin } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -32,10 +33,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const session = req.cookies.get('onyx_session')?.value;
-  const adminSecret = process.env.ADMIN_SECRET;
-
-  if (adminSecret && session && session === adminSecret) {
+  if (isAuthorizedAdmin(req)) {
     return NextResponse.json({ authenticated: true });
   }
   return NextResponse.json({ authenticated: false }, { status: 401 });
