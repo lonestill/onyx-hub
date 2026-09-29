@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { db, initDb } from '@/lib/db';
 import PackViewClient from './PackViewClient';
 
@@ -17,13 +16,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!res.rows || res.rows.length === 0) {
     return {
-      title: 'Сборка не найдена | Onyx Launcher',
+      title: 'Сборка не найдена | Scope Launcher',
     };
   }
 
   const row = res.rows[0];
-  const title = `${row.name} (${row.version} ${row.loader}) — Onyx Launcher`;
-  const description = `Скачать готовую сборку Minecraft ${row.name} (${row.mod_count} модов) в один клик через Onyx Launcher.`;
+  const title = `${row.name} (${row.version} ${row.loader}) — Scope Launcher`;
+  const description = `Скачать готовую сборку Minecraft ${row.name} (${row.mod_count} модов) в один клик через Scope Launcher.`;
 
   return {
     title,
@@ -47,27 +46,24 @@ export default async function PackPage({ params }: PageProps) {
     args: [id],
   });
 
-  if (!res.rows || res.rows.length === 0) {
-    notFound();
-  }
-
-  const row = res.rows[0];
+  const row = res.rows && res.rows.length > 0 ? res.rows[0] : null;
   let profile = {};
-  try {
-    profile = JSON.parse(row.profile_data as string);
-  } catch {
-    notFound();
+  if (row?.profile_data) {
+    try {
+      profile = JSON.parse(row.profile_data as string);
+    } catch {}
   }
 
   const packData = {
-    id: String(row.id),
-    name: String(row.name),
-    version: String(row.version),
-    loader: String(row.loader),
-    modCount: Number(row.mod_count) || 0,
-    author: row.author ? String(row.author) : null,
-    downloads: Number(row.downloads) || 0,
-    createdAt: String(row.created_at),
+    id: id,
+    name: row ? String(row.name) : 'Сборка',
+    version: row ? String(row.version) : '',
+    loader: row ? String(row.loader) : '',
+    modCount: row ? (Number(row.mod_count) || 0) : 0,
+    author: row?.author ? String(row.author) : null,
+    downloads: row ? (Number(row.downloads) || 0) : 0,
+    createdAt: row ? String(row.created_at) : '',
+    isNotFound: !row,
     profile,
   };
 

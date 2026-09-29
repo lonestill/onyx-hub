@@ -6,11 +6,13 @@ import {
   Copy,
   Check,
   ExternalLink,
+  Package,
   Layers,
   Cpu,
-  Package,
   Calendar,
   Sparkles,
+  ArrowRight,
+  Clock,
 } from 'lucide-react';
 
 interface SharedPackData {
@@ -22,6 +24,7 @@ interface SharedPackData {
   author?: string | null;
   downloads: number;
   createdAt: string;
+  isNotFound?: boolean;
   profile: {
     instance?: {
       name: string;
@@ -41,24 +44,38 @@ interface SharedPackData {
 
 export default function PackViewClient({ pack }: { pack: SharedPackData }) {
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : `https://onyx-launcher-hub.vercel.app/pack/${pack.id}`;
-  const deepLink = `onyx://pack/${pack.id}`;
+  const shareUrl =
+    typeof window !== 'undefined'
+      ? window.location.href
+      : `https://scope-hub.vercel.app/pack/${pack.id}`;
+  const scopeDeepLink = `scope://pack/${pack.id}`;
+  const onyxDeepLink = `onyx://pack/${pack.id}`;
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(pack.id);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2200);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   };
 
   const handleDownloadFile = () => {
     setDownloading(true);
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(pack.profile, null, 2));
+    const dataStr =
+      'data:text/json;charset=utf-8,' +
+      encodeURIComponent(JSON.stringify(pack.profile, null, 2));
     const downloadAnchor = document.createElement('a');
-    const safeName = pack.name.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').trim() || 'modpack';
+    const safeName =
+      pack.name.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').trim() || 'modpack';
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `${safeName}.onyxprofile`);
+    downloadAnchor.setAttribute('download', `${safeName}.scopeprofile`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -69,130 +86,205 @@ export default function PackViewClient({ pack }: { pack: SharedPackData }) {
   const recognizedMods = mods.filter((m) => m.versionId).length;
 
   return (
-    <div className="min-h-screen bg-[#0c0e12] text-[#f3f4f6] flex flex-col justify-between selection:bg-[#84cc16]/20 selection:text-[#a3e635]">
-      {/* Background ambient neon glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[380px] bg-[#84cc16]/7 blur-[150px] rounded-full" />
-        <div className="absolute top-1/2 -left-40 w-[450px] h-[450px] bg-[#10b981]/5 blur-[140px] rounded-full" />
-      </div>
-
-      {/* Header bar matching main site */}
-      <header className="sticky top-0 z-50 w-full border-b border-[rgba(255,255,255,0.08)] bg-[#0c0e12]/90 backdrop-blur-md">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-[#0c0e12] text-zinc-200 pb-20 font-sans selection:bg-zinc-800">
+      {/* Public Navbar matching reviews/page.tsx */}
+      <header className="border-b border-[rgba(255,255,255,0.06)] bg-[#0c0e12]/90 backdrop-blur-md sticky top-0 z-30">
+        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-[#181c24] border border-[rgba(255,255,255,0.12)] flex items-center justify-center font-mono font-black text-xs text-[#84cc16] shadow-sm">
-              NX
-            </div>
-            <div className="flex items-baseline gap-2.5">
-              <span className="font-mono font-bold tracking-wider text-base text-[#f3f4f6]">ONYX</span>
-              <span className="hidden sm:inline text-[11px] font-mono tracking-widest text-[#64748b] uppercase">
-                Command Center for Minecraft
-              </span>
-            </div>
+            <a
+              href="/"
+              className="text-sm font-semibold tracking-wider text-zinc-100 uppercase hover:text-white transition-colors"
+            >
+              Scope Launcher
+            </a>
+            <span className="text-zinc-700">/</span>
+            <span className="text-xs text-zinc-400 font-medium">Share</span>
           </div>
 
           <div className="flex items-center gap-3">
             <a
-              href="https://github.com/lonestill/onyx-launcher/releases/latest"
+              href="/reviews"
+              className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+            >
+              Отзывы
+            </a>
+            <a
+              href="https://github.com/lonestill/scope-launcher"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#181c24] hover:bg-[#202632] text-xs font-mono text-[#f3f4f6] transition-colors"
+              className="text-zinc-500 hover:text-zinc-300 p-1 flex items-center gap-1.5 text-xs font-mono"
             >
-              <span>СКАЧАТЬ ONYX</span>
-              <ExternalLink className="w-3.5 h-3.5 text-[#84cc16]" />
+              <span>GitHub</span>
+              <ExternalLink className="w-3 h-3" />
             </a>
           </div>
         </div>
       </header>
 
-      {/* Main pack card */}
-      <main className="relative z-10 max-w-2xl mx-auto w-full px-4 sm:px-6 py-10 sm:py-14 flex-1 flex flex-col justify-center">
-        <div className="rounded-2xl bg-[#13161c] border border-[rgba(255,255,255,0.08)] shadow-2xl p-6 sm:p-8 relative overflow-hidden">
-          {/* Accent top line */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-[#84cc16]" />
+      {/* Main Body */}
+      <main className="max-w-xl mx-auto px-4 pt-10 space-y-4">
+        <div className="panel rounded-xl p-6 relative space-y-5">
+          {/* Header Row */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase tracking-wider font-semibold text-zinc-500">
+                Scope Share
+              </span>
+              {pack.isNotFound ? (
+                <span className="inline-flex items-center gap-1 text-[11px] text-amber-400 font-mono bg-amber-950/40 px-2 py-0.5 rounded border border-amber-800/40">
+                  <Clock className="w-3 h-3" /> Сборка не найдена
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-mono bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
+                  <Package className="w-3 h-3" /> Готовая сборка
+                </span>
+              )}
+            </div>
 
-          {/* Eyebrow */}
-          <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-[#84cc16] mb-2 font-bold">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>ONYX SYNC · ГОТОВАЯ СБОРКА</span>
+            {pack.createdAt && (
+              <span className="text-[11px] font-mono text-zinc-500">
+                {new Date(pack.createdAt).toLocaleDateString('ru-RU')}
+              </span>
+            )}
           </div>
 
-          {/* Pack Name */}
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#f3f4f6] mb-4">
-            {pack.name}
-          </h1>
-
-          {/* Meta badges */}
-          <div className="flex flex-wrap items-center gap-2 mb-6">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#181c24] border border-[rgba(255,255,255,0.08)] text-xs font-mono text-[#f3f4f6]">
-              <Package className="w-3.5 h-3.5 text-[#84cc16]" />
-              <span>Minecraft {pack.version}</span>
-            </span>
-
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#181c24] border border-[rgba(255,255,255,0.08)] text-xs font-mono text-[#f3f4f6] uppercase">
-              <Cpu className="w-3.5 h-3.5 text-[#84cc16]" />
-              <span>{pack.loader}</span>
-            </span>
-
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#181c24] border border-[rgba(255,255,255,0.08)] text-xs font-mono text-[#f3f4f6]">
-              <Layers className="w-3.5 h-3.5 text-[#84cc16]" />
-              <span>{pack.modCount} {pack.modCount === 1 ? 'мод' : pack.modCount < 5 ? 'мода' : 'модов'}</span>
-            </span>
-
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#0c0e12] border border-[rgba(255,255,255,0.06)] text-[11px] font-mono text-[#64748b] ml-auto">
-              <Calendar className="w-3 h-3" />
-              <span>{new Date(pack.createdAt).toLocaleDateString('ru-RU')}</span>
-            </span>
-          </div>
-
-          {/* Primary CTA: Open in Launcher */}
-          <div className="space-y-3">
-            <a
-              href={deepLink}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[#84cc16] hover:bg-[#a3e635] text-[#111609] font-mono font-bold text-sm tracking-wider uppercase transition-all shadow-lg shadow-[#84cc16]/15 hover:shadow-[#84cc16]/30 active:scale-[0.99] cursor-pointer"
-            >
-              <Package className="w-4 h-4" />
-              <span>ОТКРЫТЬ В ONYX LAUNCHER</span>
-            </a>
-            <p className="text-center text-[11px] text-[#64748b] font-mono">
-              Если лаунчер установлен, клик откроет окно импорта сборки автоматически.
+          <div>
+            <h1 className="text-xl font-bold text-zinc-100">
+              {pack.name}
+            </h1>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+              {pack.isNotFound
+                ? 'Сборка не найдена в базе данных хаба или была удалена.'
+                : 'Готовый профиль Minecraft для быстрой установки в один клик через Scope Launcher.'}
             </p>
           </div>
 
-          {/* Secondary Actions */}
-          <div className="mt-6 pt-6 border-t border-[rgba(255,255,255,0.08)] grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <button
-              onClick={handleCopyLink}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#181c24] hover:bg-[#202632] border border-[rgba(255,255,255,0.08)] text-xs font-mono text-[#f3f4f6] transition-colors cursor-pointer"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-[#84cc16]" /> : <Copy className="w-3.5 h-3.5 text-[#9ca3af]" />}
-              <span>{copied ? 'Ссылка скопирована' : 'Скопировать ссылку'}</span>
-            </button>
+          {/* Not Found Banner */}
+          {pack.isNotFound && (
+            <div className="bg-amber-950/20 border border-amber-800/30 rounded-lg p-3 text-xs text-amber-200/90 leading-relaxed">
+              Сборка с идентификатором <strong className="font-mono text-amber-300 font-semibold">{pack.id}</strong> не найдена. Проверьте правильность ссылки или кода.
+            </div>
+          )}
 
+          {/* Code Container */}
+          <div className="bg-[#090b0e] p-4 rounded-lg border border-zinc-800 flex items-center justify-between gap-4">
+            <div>
+              <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 block">
+                Код сборки
+              </span>
+              <span className="text-xl sm:text-2xl font-mono font-bold tracking-wider text-zinc-100">
+                {pack.id}
+              </span>
+            </div>
             <button
-              onClick={handleDownloadFile}
-              disabled={downloading}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#181c24] hover:bg-[#202632] border border-[rgba(255,255,255,0.08)] text-xs font-mono text-[#f3f4f6] transition-colors cursor-pointer"
+              onClick={handleCopyCode}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#181c24] hover:bg-[#202632] border border-zinc-700/80 text-xs font-mono text-zinc-200 transition-colors shrink-0"
             >
-              <Download className="w-3.5 h-3.5 text-[#9ca3af]" />
-              <span>{downloading ? 'Экспорт...' : 'Скачать .onyxprofile'}</span>
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400 font-medium">Скопировано</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Копировать</span>
+                </>
+              )}
             </button>
           </div>
 
-          {/* Mods list preview */}
+          {/* Metadata Grid */}
+          {!pack.isNotFound && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div className="bg-[#090b0e] p-3 rounded-lg border border-zinc-800/80">
+                <span className="text-[10px] text-zinc-500 font-mono block">Версия</span>
+                <span className="font-mono text-zinc-200 block mt-0.5">{pack.version}</span>
+              </div>
+
+              <div className="bg-[#090b0e] p-3 rounded-lg border border-zinc-800/80">
+                <span className="text-[10px] text-zinc-500 font-mono block">Ядро</span>
+                <span className="font-mono text-zinc-200 block mt-0.5 uppercase">{pack.loader}</span>
+              </div>
+
+              <div className="bg-[#090b0e] p-3 rounded-lg border border-zinc-800/80">
+                <span className="text-[10px] text-zinc-500 font-mono block">Моды</span>
+                <span className="font-mono text-zinc-200 block mt-0.5">{pack.modCount} шт.</span>
+              </div>
+
+              <div className="bg-[#090b0e] p-3 rounded-lg border border-zinc-800/80">
+                <span className="text-[10px] text-zinc-500 font-mono block">Загрузок</span>
+                <span className="font-mono text-zinc-200 block mt-0.5">{pack.downloads}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Primary CTA and Actions */}
+          <div className="space-y-2.5 pt-2">
+            <a
+              href={scopeDeepLink}
+              className="w-full py-2.5 px-4 rounded bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              <Package className="w-3.5 h-3.5 fill-current" />
+              <span>Открыть в Scope Launcher</span>
+            </a>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                onClick={handleCopyLink}
+                className="py-1.5 px-3 rounded bg-[#13161c] hover:bg-[#181c24] border border-zinc-800 text-[11px] font-mono text-zinc-300 hover:text-white transition-colors flex items-center justify-center gap-1.5"
+              >
+                {linkCopied ? (
+                  <>
+                    <Check className="w-3 h-3 text-emerald-400" />
+                    <span className="text-emerald-400">Скопировано</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3 text-zinc-500" />
+                    <span>Скопировать ссылку</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleDownloadFile}
+                disabled={downloading || pack.isNotFound}
+                className="py-1.5 px-3 rounded bg-[#13161c] hover:bg-[#181c24] border border-zinc-800 text-[11px] font-mono text-zinc-300 hover:text-white transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+              >
+                <Download className="w-3 h-3 text-zinc-500" />
+                <span>{downloading ? 'Экспорт...' : 'Скачать файл'}</span>
+              </button>
+            </div>
+
+            <div className="text-center pt-1">
+              <a
+                href={onyxDeepLink}
+                className="text-[11px] text-zinc-600 hover:text-zinc-400 font-mono transition-colors"
+                title="Legacy protocol fallback"
+              >
+                Открыть через legacy onyx://
+              </a>
+            </div>
+          </div>
+
+          {/* Mods List */}
           {mods.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-[rgba(255,255,255,0.08)]">
-              <div className="flex items-center justify-between mb-3 text-xs">
-                <span className="font-semibold text-[#f3f4f6]">Список модов в сборке:</span>
-                <span className="text-[11px] font-mono text-[#64748b]">
+            <div className="pt-2 border-t border-[rgba(255,255,255,0.06)] space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-zinc-300">Список модов в сборке</span>
+                <span className="text-[11px] font-mono text-zinc-500">
                   {recognizedMods} из {mods.length} с автозагрузкой
                 </span>
               </div>
-              <div className="max-h-48 overflow-y-auto rounded-xl bg-[#0c0e12] border border-[rgba(255,255,255,0.08)] p-3 space-y-1 text-[11px] font-mono text-[#9ca3af]">
+              <div className="max-h-48 overflow-y-auto rounded-lg bg-[#090b0e] border border-zinc-800/80 p-2 space-y-1 text-xs font-mono">
                 {mods.map((mod, index) => (
-                  <div key={index} className="flex items-center justify-between px-2 py-1 rounded hover:bg-[#181c24]">
-                    <span className="truncate pr-2">• {mod.name}</span>
-                    <span className="text-[10px] text-[#64748b] shrink-0">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between px-2 py-1 rounded hover:bg-[#181c24] transition-colors"
+                  >
+                    <span className="truncate pr-2 text-zinc-300">• {mod.name}</span>
+                    <span className="text-[10px] text-zinc-500 shrink-0">
                       {mod.versionId ? 'Modrinth' : 'Локальный'}
                     </span>
                   </div>
@@ -203,20 +295,25 @@ export default function PackViewClient({ pack }: { pack: SharedPackData }) {
         </div>
 
         {/* Manual instructions card */}
-        <div className="mt-5 p-4 rounded-xl bg-[#13161c] border border-[rgba(255,255,255,0.08)] text-xs text-[#9ca3af] leading-relaxed font-mono">
-          <div className="text-[#f3f4f6] font-semibold mb-1.5">Как установить через лаунчер вручную:</div>
-          <ol className="list-decimal list-inside space-y-1 text-[#9ca3af] text-[11px]">
-            <li>Открой Onyx Launcher.</li>
-            <li>В разделе «Библиотека» нажми «+ Импорт» → «По ссылке или коду».</li>
-            <li>Вставь код сборки: <code className="text-[#84cc16] bg-[#0c0e12] px-1.5 py-0.5 rounded border border-[rgba(255,255,255,0.08)]">{pack.id}</code></li>
+        <div className="panel rounded-xl p-4 text-xs font-mono text-zinc-400 space-y-2">
+          <div className="text-zinc-200 font-semibold">Установка в лаунчере вручную:</div>
+          <ol className="list-decimal list-inside space-y-1 text-[11px] text-zinc-400">
+            <li>Откройте Scope Launcher.</li>
+            <li>В разделе «Библиотека» нажмите «+ Импорт» → «По ссылке или коду».</li>
+            <li>
+              Вставьте код сборки:{' '}
+              <code className="text-zinc-200 bg-[#090b0e] px-1.5 py-0.5 rounded border border-zinc-800">
+                {pack.id}
+              </code>
+            </li>
           </ol>
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-[rgba(255,255,255,0.08)] bg-[#0c0e12] py-5 text-center text-xs text-[#64748b] font-mono">
-        Onyx Launcher &copy; {new Date().getFullYear()} — Command Center for Minecraft
-      </footer>
+        {/* Footer info */}
+        <p className="text-center text-[11px] font-mono text-zinc-600">
+          Scope Launcher • Community Profiles & Sharing
+        </p>
+      </main>
     </div>
   );
 }
