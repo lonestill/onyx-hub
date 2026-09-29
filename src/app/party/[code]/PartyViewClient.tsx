@@ -1,6 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import {
+  Copy,
+  Check,
+  ExternalLink,
+  Play,
+  Download,
+  Users,
+  Clock,
+  Radio,
+} from 'lucide-react';
 
 interface PartyRoomData {
   code: string;
@@ -18,6 +28,7 @@ interface PartyRoomData {
 
 export default function PartyViewClient({ room }: { room: PartyRoomData }) {
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [redirected, setRedirected] = useState(false);
 
   const scopeDeepLink = `scope://party/${room.code}`;
@@ -50,141 +61,201 @@ export default function PartyViewClient({ room }: { room: PartyRoomData }) {
   };
 
   return (
-    <main className="min-h-screen bg-[#090d16] text-[#f3f4f6] flex flex-col justify-between p-4 sm:p-8 font-sans selection:bg-[#84cc16]/30">
-      <header className="max-w-4xl mx-auto w-full flex items-center justify-between py-4 border-b border-white/5">
-        <a href="/" className="flex items-center gap-2 font-bold tracking-tight text-white hover:opacity-80 transition-opacity">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#84cc16] to-[#10b981] flex items-center justify-center text-black font-extrabold text-lg shadow-[0_0_20px_rgba(132,204,22,0.3)]">
-            S
+    <div className="min-h-screen bg-[#0c0e12] text-zinc-200 pb-20 font-sans selection:bg-zinc-800">
+      {/* Public Navbar matching reviews/page.tsx */}
+      <header className="border-b border-[rgba(255,255,255,0.06)] bg-[#0c0e12]/90 backdrop-blur-md sticky top-0 z-30">
+        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <a
+              href="/"
+              className="text-sm font-semibold tracking-wider text-zinc-100 uppercase hover:text-white transition-colors"
+            >
+              Scope Launcher
+            </a>
+            <span className="text-zinc-700">/</span>
+            <span className="text-xs text-zinc-400 font-medium">Party</span>
           </div>
-          <span className="text-lg">Scope Hub</span>
-        </a>
-        <a
-          href="https://github.com/lonestill/scope-launcher"
-          target="_blank"
-          rel="noreferrer"
-          className="text-xs text-[#9ca3af] hover:text-white transition-colors bg-white/5 px-3 py-1.5 rounded-full border border-white/10"
-        >
-          GitHub Repository
-        </a>
+
+          <div className="flex items-center gap-3">
+            <a
+              href="/reviews"
+              className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+            >
+              Отзывы
+            </a>
+            <a
+              href="https://github.com/lonestill/scope-launcher"
+              target="_blank"
+              rel="noreferrer"
+              className="text-zinc-500 hover:text-zinc-300 p-1 flex items-center gap-1.5 text-xs font-mono"
+            >
+              <span>GitHub</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        </div>
       </header>
 
-      <div className="max-w-xl mx-auto w-full py-12 flex-1 flex flex-col justify-center">
-        <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#84cc16]/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+      {/* Main Body */}
+      <main className="max-w-xl mx-auto px-4 pt-10 space-y-4">
+        <div className="panel rounded-xl p-6 relative space-y-5">
+          {/* Header Row */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase tracking-wider font-semibold text-zinc-500">
+                Scope Party
+              </span>
+              {room.isNotFound ? (
+                <span className="inline-flex items-center gap-1 text-[11px] text-amber-400 font-mono bg-amber-950/40 px-2 py-0.5 rounded border border-amber-800/40">
+                  <Clock className="w-3 h-3" /> Ожидание комнаты
+                </span>
+              ) : room.isExpired ? (
+                <span className="inline-flex items-center gap-1 text-[11px] text-zinc-400 font-mono bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+                  Завершена
+                </span>
+              ) : room.status === 'hosting' ? (
+                <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-mono bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
+                  <Radio className="w-3 h-3 animate-pulse" /> В игре
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] text-sky-400 font-mono bg-sky-950/40 px-2 py-0.5 rounded border border-sky-800/40">
+                  <Users className="w-3 h-3" /> Ожидание игроков
+                </span>
+              )}
+            </div>
 
-          <div className="flex items-center justify-between mb-6">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#84cc16]/10 text-[#84cc16] border border-[#84cc16]/20">
-              <span className="w-2 h-2 rounded-full bg-[#84cc16] animate-pulse" />
-              Scope Party Room
-            </span>
-            <span className="text-xs text-[#9ca3af]">
-              {room.isNotFound
-                ? 'Ожидание комнаты'
-                : room.isExpired
-                  ? 'Expired'
-                  : room.status === 'hosting'
-                    ? 'В игре'
-                    : 'Ожидание игроков'}
+            <span className="text-[11px] font-mono text-zinc-500">
+              {room.peersCount} {room.peersCount === 1 ? 'игрок' : 'игрока'}
             </span>
           </div>
 
-          {room.isNotFound && (
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3.5 mb-6 text-xs sm:text-sm text-amber-200/90 text-center">
-              Комната ещё не создана хостом или была закрыта. Если друг уже запустил игру — скопируйте код или откройте Scope Launcher.
-            </div>
-          )}
-
-          <div className="text-center my-6">
-            <p className="text-xs uppercase tracking-widest text-[#9ca3af] mb-2 font-semibold">Join Code</p>
-            <button
-              onClick={copyCode}
-              title="Click to copy code"
-              className="inline-block px-8 py-3 bg-black/40 hover:bg-black/60 border border-white/10 hover:border-[#84cc16]/50 rounded-2xl text-4xl sm:text-5xl font-mono font-black tracking-wider text-white shadow-inner transition-all group"
-            >
-              <span className="group-hover:text-[#84cc16] transition-colors">{room.code}</span>
-            </button>
-            <p className="text-xs text-[#64748b] mt-2">
-              {copied ? 'Код скопирован!' : 'Нажмите, чтобы скопировать'}
+          <div>
+            <h1 className="text-xl font-bold text-zinc-100">
+              Комната {room.code}
+            </h1>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+              Прямое подключение к совместной игре без настройки портов и Hamachi.
             </p>
           </div>
 
-          <div className="bg-black/20 rounded-2xl p-4 border border-white/5 space-y-3 mb-8">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-[#9ca3af]">Хост</span>
-              <span className="font-semibold text-white">{room.hostDisplayName}</span>
+          {/* Not Found Banner */}
+          {room.isNotFound && (
+            <div className="bg-amber-950/20 border border-amber-800/30 rounded-lg p-3 text-xs text-amber-200/90 leading-relaxed">
+              Комната ещё не создана хостом или игра была завершена. Скопируйте код{' '}
+              <strong className="font-mono text-amber-300 font-semibold">{room.code}</strong> и вставьте его
+              в лаунчере, когда хост откроет мир.
             </div>
-            {room.instanceName && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[#9ca3af]">Instance</span>
-                <span className="font-semibold text-white">{room.instanceName}</span>
-              </div>
-            )}
+          )}
+
+          {/* Code Container */}
+          <div className="bg-[#090b0e] p-4 rounded-lg border border-zinc-800 flex items-center justify-between gap-4">
+            <div>
+              <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 block">
+                Код комнаты
+              </span>
+              <span className="text-2xl sm:text-3xl font-mono font-bold tracking-widest text-zinc-100">
+                {room.code}
+              </span>
+            </div>
+            <button
+              onClick={copyCode}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#181c24] hover:bg-[#202632] border border-zinc-700/80 text-xs font-mono text-zinc-200 transition-colors shrink-0"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400 font-medium">Скопировано</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Копировать</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Metadata Grid */}
+          <div className="grid grid-cols-2 gap-2.5 text-xs">
+            <div className="bg-[#090b0e] p-3 rounded-lg border border-zinc-800/80">
+              <span className="text-[10px] text-zinc-500 font-mono block">Хост</span>
+              <span className="font-medium text-zinc-200 truncate block mt-0.5">
+                {room.hostDisplayName}
+              </span>
+            </div>
+
+            <div className="bg-[#090b0e] p-3 rounded-lg border border-zinc-800/80">
+              <span className="text-[10px] text-zinc-500 font-mono block">Сборка</span>
+              <span className="font-medium text-zinc-200 truncate block mt-0.5">
+                {room.instanceName || 'Minecraft'}
+              </span>
+            </div>
+
             {room.minecraftVersion && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[#9ca3af]">Minecraft</span>
-                <span className="font-mono text-xs bg-white/5 px-2 py-0.5 rounded text-white">
+              <div className="bg-[#090b0e] p-3 rounded-lg border border-zinc-800/80">
+                <span className="text-[10px] text-zinc-500 font-mono block">Версия</span>
+                <span className="font-mono text-zinc-300 block mt-0.5">
                   {room.loader || 'Vanilla'} {room.minecraftVersion}
                 </span>
               </div>
             )}
+
             {typeof room.modCount === 'number' && room.modCount > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[#9ca3af]">Mods</span>
-                <span className="font-semibold text-white">{room.modCount} active mods</span>
+              <div className="bg-[#090b0e] p-3 rounded-lg border border-zinc-800/80">
+                <span className="text-[10px] text-zinc-500 font-mono block">Моды</span>
+                <span className="font-mono text-zinc-300 block mt-0.5">
+                  {room.modCount} шт.
+                </span>
               </div>
             )}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-[#9ca3af]">Lobby Players</span>
-              <span className="font-semibold text-[#84cc16]">{room.peersCount} connected</span>
-            </div>
           </div>
 
-          <div className="space-y-3">
+          {/* Primary CTA and Actions */}
+          <div className="space-y-2.5 pt-2">
             <a
               href={scopeDeepLink}
-              className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-[#84cc16] to-[#10b981] hover:opacity-95 text-black font-bold flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(132,204,22,0.3)] transition-all"
+              className="w-full py-2.5 px-4 rounded bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm"
             >
+              <Play className="w-3.5 h-3.5 fill-current" />
               <span>Залететь в Scope Launcher</span>
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
             </a>
 
-            <div className="flex items-center justify-center gap-3 pt-2">
+            <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 onClick={copyLink}
-                className="text-xs text-[#9ca3af] hover:text-white transition-colors underline"
+                className="py-1.5 px-3 rounded bg-[#13161c] hover:bg-[#181c24] border border-zinc-800 text-[11px] font-mono text-zinc-300 hover:text-white transition-colors flex items-center justify-center gap-1.5"
               >
-                Скопировать ссылку для друга
+                {linkCopied ? (
+                  <>
+                    <Check className="w-3 h-3 text-emerald-400" />
+                    <span className="text-emerald-400">Скопировано</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3 text-zinc-500" />
+                    <span>Скопировать ссылку</span>
+                  </>
+                )}
               </button>
-              <span className="text-[#64748b]">•</span>
+
               <a
-                href={onyxDeepLink}
-                className="text-xs text-[#64748b] hover:text-[#9ca3af] transition-colors"
-                title="Legacy deep-link fallback"
+                href="https://github.com/lonestill/scope-launcher/releases/latest"
+                target="_blank"
+                rel="noreferrer"
+                className="py-1.5 px-3 rounded bg-[#13161c] hover:bg-[#181c24] border border-zinc-800 text-[11px] font-mono text-zinc-300 hover:text-white transition-colors flex items-center justify-center gap-1.5"
               >
-                Открыть через onyx://
+                <Download className="w-3 h-3 text-zinc-500" />
+                <span>Скачать Scope</span>
               </a>
             </div>
           </div>
-
-          <div className="mt-8 pt-6 border-t border-white/5 text-center text-xs text-[#64748b]">
-            Не установлен лаунчер?{' '}
-            <a
-              href="https://github.com/lonestill/scope-launcher/releases/latest"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[#84cc16] hover:underline font-medium"
-            >
-              Скачать Scope Launcher (Windows, Linux, macOS)
-            </a>
-          </div>
         </div>
-      </div>
 
-      <footer className="max-w-4xl mx-auto w-full text-center py-4 border-t border-white/5 text-xs text-[#64748b]">
-        Scope Launcher • Zero-Config P2P Multiplayer System • No Port Forwarding Required
-      </footer>
-    </main>
+        {/* Footer info */}
+        <p className="text-center text-[11px] font-mono text-zinc-600">
+          Scope Launcher • Zero-Config P2P Multiplayer System
+        </p>
+      </main>
+    </div>
   );
 }
