@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { db, initDb } from '@/lib/db';
 import PartyViewClient from './PartyViewClient';
 
@@ -57,26 +56,25 @@ export default async function PartyRoomPage({ params }: PageProps) {
     args: [upperCode],
   });
 
-  if (!res.rows || res.rows.length === 0) {
-    notFound();
-  }
-
-  const row = res.rows[0];
-  const expiresAt = String(row.expires_at);
-  const isExpired = new Date(expiresAt).getTime() < Date.now();
+  const isNotFound = !res.rows || res.rows.length === 0;
+  const row = isNotFound ? null : res.rows[0];
+  const expiresAt = row ? String(row.expires_at) : '';
+  const isExpired = row ? new Date(expiresAt).getTime() < Date.now() : false;
 
   let peersCount = 1;
-  try {
-    const peers = JSON.parse(row.peers as string);
-    if (Array.isArray(peers)) peersCount = peers.length;
-  } catch {}
+  if (row) {
+    try {
+      const peers = JSON.parse(row.peers as string);
+      if (Array.isArray(peers)) peersCount = peers.length;
+    } catch {}
+  }
 
   let instanceName = undefined;
   let minecraftVersion = undefined;
   let loader = undefined;
   let modCount = undefined;
 
-  if (row.instance_manifest) {
+  if (row && row.instance_manifest) {
     try {
       const manifest = JSON.parse(row.instance_manifest as string);
       instanceName = manifest.instanceName;
@@ -88,10 +86,11 @@ export default async function PartyRoomPage({ params }: PageProps) {
 
   const roomData = {
     code: upperCode,
-    hostDisplayName: String(row.host_display_name || 'Хост'),
-    status: String(row.status),
+    hostDisplayName: row ? String(row.host_display_name || 'Хост') : 'Ожидание хоста',
+    status: !row ? 'not_found' : String(row.status),
     expiresAt,
     isExpired,
+    isNotFound,
     peersCount,
     instanceName,
     minecraftVersion,

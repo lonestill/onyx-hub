@@ -8,6 +8,7 @@ interface PartyRoomData {
   status: string;
   expiresAt: string;
   isExpired: boolean;
+  isNotFound?: boolean;
   peersCount: number;
   instanceName?: string;
   minecraftVersion?: string;
@@ -23,7 +24,7 @@ export default function PartyViewClient({ room }: { room: PartyRoomData }) {
   const onyxDeepLink = `onyx://party/${room.code}`;
 
   useEffect(() => {
-    if (!room.isExpired && room.status !== 'closed' && !redirected) {
+    if (!room.isNotFound && !room.isExpired && room.status !== 'closed' && !redirected) {
       setRedirected(true);
       const timer = setTimeout(() => {
         try {
@@ -77,9 +78,21 @@ export default function PartyViewClient({ room }: { room: PartyRoomData }) {
               Scope Party Room
             </span>
             <span className="text-xs text-[#9ca3af]">
-              {room.isExpired ? 'Expired' : room.status === 'hosting' ? 'In Game' : 'Waiting for Players'}
+              {room.isNotFound
+                ? 'Ожидание комнаты'
+                : room.isExpired
+                  ? 'Expired'
+                  : room.status === 'hosting'
+                    ? 'В игре'
+                    : 'Ожидание игроков'}
             </span>
           </div>
+
+          {room.isNotFound && (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3.5 mb-6 text-xs sm:text-sm text-amber-200/90 text-center">
+              Комната ещё не создана хостом или была закрыта. Если друг уже запустил игру — скопируйте код или откройте Scope Launcher.
+            </div>
+          )}
 
           <div className="text-center my-6">
             <p className="text-xs uppercase tracking-widest text-[#9ca3af] mb-2 font-semibold">Join Code</p>
@@ -91,13 +104,13 @@ export default function PartyViewClient({ room }: { room: PartyRoomData }) {
               <span className="group-hover:text-[#84cc16] transition-colors">{room.code}</span>
             </button>
             <p className="text-xs text-[#64748b] mt-2">
-              {copied ? 'Copied code to clipboard!' : 'Click code to copy'}
+              {copied ? 'Код скопирован!' : 'Нажмите, чтобы скопировать'}
             </p>
           </div>
 
           <div className="bg-black/20 rounded-2xl p-4 border border-white/5 space-y-3 mb-8">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[#9ca3af]">Host</span>
+              <span className="text-[#9ca3af]">Хост</span>
               <span className="font-semibold text-white">{room.hostDisplayName}</span>
             </div>
             {room.instanceName && (
